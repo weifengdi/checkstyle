@@ -27,8 +27,11 @@ public class PermissionCollector {
     private final Map<String, String> mPermissionGroupMap = new ConcurrentHashMap<>();
     private final Map<String, String> mExtraPermissionGroupMap = new ConcurrentHashMap<>();
 
-    private final Map<String, Set<String>> mCommentPermissions = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>> mCommentPermissionGroups = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> mMethodPermissions = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> mMethodPermissionGroups = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<String>> mFieldPermissions = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> mFieldPermissionGroups = new ConcurrentHashMap<>();
 
     public void init() {
         // init permission map
@@ -59,40 +62,80 @@ public class PermissionCollector {
         }
     }
 
-    public void addCommentPermission(String permission, String caller) {
+    public void addMethodPermission(String permission, String caller) {
         if (!mPermissionMap.containsKey(permission)) {
             mExtraPermissionMap.put(permission, translatePermission(permission));
-            LOG.info("addCommentPermission but permission not found in Manifest, permission: " + permission + ", caller: " + caller);
+            LOG.info("addMethodPermission but permission not found in Manifest, permission: " + permission + ", caller: " + caller);
         }
-        Set<String> callerSet = mCommentPermissions.get(permission);
+        Set<String> callerSet = mMethodPermissions.get(permission);
         if (callerSet == null) {
-            synchronized (mCommentPermissions) {
-                callerSet = mCommentPermissions.get(permission);
+            synchronized (mMethodPermissions) {
+                callerSet = mMethodPermissions.get(permission);
                 if (callerSet == null) {
                     callerSet = Collections.synchronizedSet(new HashSet<>());
-                    mCommentPermissions.put(permission, callerSet);
+                    mMethodPermissions.put(permission, callerSet);
                 }
             }
         }
         callerSet.add(caller);
     }
 
-    public void addCommentPermissionGroup(String permission_group, String caller) {
+    public void addMethodPermissionGroup(String permission_group, String caller) {
         if (!mPermissionGroupMap.containsKey(permission_group)) {
             mExtraPermissionGroupMap.put(permission_group, translatePermissionGroup(permission_group));
             LOG.info("addCommentPermissionGroup but permission_group not found in Manifest, permission_group: " + permission_group + ", caller: " + caller);
         }
-        Set<String> callerSet = mCommentPermissionGroups.get(permission_group);
+        Set<String> callerSet = mMethodPermissionGroups.get(permission_group);
         if (callerSet == null) {
-            synchronized (mCommentPermissionGroups) {
-                callerSet = mCommentPermissionGroups.get(permission_group);
+            synchronized (mMethodPermissionGroups) {
+                callerSet = mMethodPermissionGroups.get(permission_group);
                 if (callerSet == null) {
                     callerSet = Collections.synchronizedSet(new HashSet<>());
-                    mCommentPermissionGroups.put(permission_group, callerSet);
+                    mMethodPermissionGroups.put(permission_group, callerSet);
                 }
             }
         }
         callerSet.add(caller);
+    }
+
+    public void addFieldPermission(String permission, String desc) {
+        if (!mPermissionMap.containsKey(permission)) {
+            mExtraPermissionMap.put(permission, translatePermission(permission));
+            LOG.info("addFieldPermission but permission not found in Manifest, permission: " + permission + ", desc: " + desc);
+        }
+        if (desc.contains("android.os.Build$VERSION_CODES")) {
+            LOG.info("addFieldPermission but only a api level desc, ignore.");
+            return;
+        }
+        Set<String> descSet = mFieldPermissions.get(permission);
+        if (descSet == null) {
+            synchronized (mFieldPermissions) {
+                descSet = mFieldPermissions.get(permission);
+                if (descSet == null) {
+                    descSet = Collections.synchronizedSet(new HashSet<>());
+                    mFieldPermissions.put(permission, descSet);
+                }
+            }
+        }
+        descSet.add(desc);
+    }
+
+    public void addFieldPermissionGroup(String permission_group, String desc) {
+        if (!mPermissionGroupMap.containsKey(permission_group)) {
+            mExtraPermissionGroupMap.put(permission_group, translatePermission(permission_group));
+            LOG.info("addFieldPermissionGroup but permission not found in Manifest, permission_group: " + permission_group + ", desc: " + desc);
+        }
+        Set<String> descSet = mFieldPermissionGroups.get(permission_group);
+        if (descSet == null) {
+            synchronized (mFieldPermissionGroups) {
+                descSet = mFieldPermissionGroups.get(permission_group);
+                if (descSet == null) {
+                    descSet = Collections.synchronizedSet(new HashSet<>());
+                    mFieldPermissionGroups.put(permission_group, descSet);
+                }
+            }
+        }
+        descSet.add(desc);
     }
 
     private String translatePermission(String permission) {

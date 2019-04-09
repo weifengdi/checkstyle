@@ -24,4 +24,9 @@ public class UriPermissionCheck extends AbstractCheck {
     public void visitToken(DetailAST ast) {
     }
 
+    @Override
+    public boolean isCommentNodesRequired() {
+        return true;
+    }
+
 }

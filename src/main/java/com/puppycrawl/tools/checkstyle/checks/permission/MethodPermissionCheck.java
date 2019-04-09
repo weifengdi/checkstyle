@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.oracle.tools.packager.Log;
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FullIdent;
@@ -113,9 +112,9 @@ public class MethodPermissionCheck extends AbstractCheck {
                     if (sufIndex >= 0) {
                         permission = permission.substring(0, sufIndex);
                     }
-                    Log.info("checkHasPermission got:" + permission);
+                    LOG.info("checkHasPermission got:" + permission);
                     String caller = getCaller(commentAst);
-                    PermissionCollector.getInstance().addCommentPermission(permission, caller);
+                    PermissionCollector.getInstance().addMethodPermission(permission, caller);
                 }
             }
         } else if (commentLine.contains(COMMENT_CODE_PERM_ID)) {
@@ -128,9 +127,9 @@ public class MethodPermissionCheck extends AbstractCheck {
                     if (sufIndex >= 0) {
                         permission = permission.substring(0, sufIndex);
                     }
-                    Log.info("checkHasPermission got:" + permission);
+                    LOG.info("checkHasPermission got:" + permission);
                     String caller = getCaller(commentAst);
-                    PermissionCollector.getInstance().addCommentPermission(permission, caller);
+                    PermissionCollector.getInstance().addMethodPermission(permission, caller);
                 }
             }
         }
@@ -173,7 +172,7 @@ public class MethodPermissionCheck extends AbstractCheck {
             if (tempMethodAST.getType() == TokenTypes.CLASS_DEF
                     || tempMethodAST.getType() == TokenTypes.INTERFACE_DEF) {
                 final String className = tempMethodAST.findFirstToken(TokenTypes.IDENT).getText();
-                classNameList.add(className);
+                classNameList.add(0, className);
             }
             tempMethodAST = tempMethodAST.getParent();
         }
