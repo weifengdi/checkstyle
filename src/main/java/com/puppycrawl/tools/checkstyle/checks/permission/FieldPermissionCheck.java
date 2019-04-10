@@ -1,7 +1,9 @@
 package com.puppycrawl.tools.checkstyle.checks.permission;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
@@ -14,16 +16,6 @@ import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
 public class FieldPermissionCheck extends AbstractCheck {
 
     private static final Logger LOG = Logger.getLogger(FieldPermissionCheck.class.getName());
-
-    private static final String COMMENT_LINK_PERM_ID = "{@link android.Manifest.permission#";
-    private static final String COMMENT_LINK_PERM_PREF = "android.Manifest.permission#";
-    private static final String COMMENT_LINK_PERM_SUF = "}";
-
-    private static final String COMMENT_CODE_PERM_ID = "{@code android.permission.";
-    private static final String COMMENT_CODE_PERM_PREF = "android.permission.";
-    private static final String COMMENT_CODE_PERM_SUF = "}";
-
-    private static final String COMMENT_GAP_PREF = " ";
 
     private String packageName = "";
 
@@ -100,35 +92,25 @@ public class FieldPermissionCheck extends AbstractCheck {
 
     private void checkHasPermission(DetailAST commentAst) {
         String commentLine = commentAst.getText();
-        if (commentLine.contains(COMMENT_LINK_PERM_ID)) {
-            String[] comments = commentLine.split(COMMENT_GAP_PREF);
-            for (String comment : comments) {
-                comment = comment.trim();
-                if (comment.startsWith(COMMENT_LINK_PERM_PREF)) {
-                    String permission = comment.replace(COMMENT_LINK_PERM_PREF, "");
-                    int sufIndex = permission.indexOf(COMMENT_LINK_PERM_SUF);
-                    if (sufIndex >= 0) {
-                        permission = permission.substring(0, sufIndex);
-                    }
-                    LOG.info("checkHasPermission got:" + permission);
-                    String desc = getDesc(commentAst);
-                    PermissionCollector.getInstance().addFieldPermission(permission, desc);
-                }
+
+        Set<String> permissions = CommentUtil.getPermissions(commentLine);
+
+        if (permissions != null && permissions.size() > 0) {
+            for (String permission : permissions) {
+                String desc = getDesc(commentAst);
+                PermissionCollector.getInstance().addFieldPermission(permission, desc);
             }
-        } else if (commentLine.contains(COMMENT_CODE_PERM_ID)) {
-            String[] comments = commentLine.split(COMMENT_GAP_PREF);
-            for (String comment : comments) {
-                comment = comment.trim();
-                if (comment.startsWith(COMMENT_CODE_PERM_PREF)) {
-                    String permission = comment.replace(COMMENT_CODE_PERM_PREF, "");
-                    int sufIndex = permission.indexOf(COMMENT_CODE_PERM_SUF);
-                    if (sufIndex >= 0) {
-                        permission = permission.substring(0, sufIndex);
-                    }
-                    LOG.info("checkHasPermission got:" + permission);
-                    String desc = getDesc(commentAst);
-                    PermissionCollector.getInstance().addMethodPermission(permission, desc);
-                }
+        }
+
+        Set<String> potentialPermissions = new HashSet<>();
+        CommentUtil.getPotentialPermissions(commentLine, potentialPermissions, "android.Manifest.permission#", null);
+        CommentUtil.getPotentialPermissions(commentLine, potentialPermissions, "android.permission.", null);
+        CommentUtil.getPotentialPermissions(commentLine, potentialPermissions, " ", " permission");
+
+        if (potentialPermissions != null && potentialPermissions.size() > 0) {
+            for (String permission : potentialPermissions) {
+                String desc = getDesc(commentAst);
+                PermissionCollector.getInstance().addFieldPermission(permission, desc);
             }
         }
     }
