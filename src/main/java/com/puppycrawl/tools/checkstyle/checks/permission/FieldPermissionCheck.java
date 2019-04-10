@@ -128,6 +128,7 @@ public class FieldPermissionCheck extends AbstractCheck {
         }
         if (variableAST == null) {
             LOG.info("getDesc but no variableAST got!");
+            return "";
         }
         // 获取相关属性
         String fieldName = variableAST.findFirstToken(TokenTypes.IDENT).getText();

@@ -2,6 +2,8 @@ package com.puppycrawl.tools.checkstyle.checks.permission;
 
 import java.util.*;
 
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
+import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 import com.puppycrawl.tools.checkstyle.permission.PermissionCollector;
 
 public class CommentUtil {
@@ -152,6 +154,42 @@ public class CommentUtil {
             return permissionsFound;
         }
         return null;
+    }
+
+    public static DetailAST getCommentDetailAST(DetailAST target) {
+        DetailAST commentAST = null;
+        DetailAST modifiers = target.findFirstToken(TokenTypes.MODIFIERS);
+        if (modifiers != null) {
+            DetailAST child = modifiers.getFirstChild();
+            while (child.getNextSibling() != null) {
+                switch (child.getType()) {
+                    case TokenTypes.SINGLE_LINE_COMMENT:
+                    case TokenTypes.BLOCK_COMMENT_BEGIN:
+                        commentAST = child.findFirstToken(TokenTypes.COMMENT_CONTENT);
+                        break;
+                    // 其中有部分是在Annotation里面，所以也可能需要找到TokenTypes.ANNOTATION
+                    case TokenTypes.ANNOTATION:
+                        DetailAST annotationChild = child.getFirstChild();
+                        while (annotationChild.getNextSibling() != null) {
+                            switch (annotationChild.getType()) {
+                                case TokenTypes.SINGLE_LINE_COMMENT:
+                                case TokenTypes.BLOCK_COMMENT_BEGIN:
+                                    commentAST = annotationChild.findFirstToken(TokenTypes.COMMENT_CONTENT);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            annotationChild = annotationChild.getNextSibling();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                child = child.getNextSibling();
+            }
+        }
+
+        return commentAST;
     }
 
 }

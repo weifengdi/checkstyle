@@ -1,9 +1,12 @@
 package com.puppycrawl.tools.checkstyle.permission;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+
+import com.puppycrawl.tools.checkstyle.checks.permission.FileUtil;
 
 public class PermissionCollector {
 
@@ -35,6 +38,10 @@ public class PermissionCollector {
 
     private final Map<String, Set<String>> mClassPermissions = new ConcurrentHashMap<>();
 //    private final Map<String, Set<String>> mClassPermissionGroups = new ConcurrentHashMap<>();
+
+    private final Set<String> mUris = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Set<String>> mUriPermissions = new ConcurrentHashMap<>();
+//    private final Map<String, Set<String>> mUriPermissionGroups = new ConcurrentHashMap<>();
 
     public void init() {
         // init permission map
@@ -74,6 +81,13 @@ public class PermissionCollector {
 //        } catch (Throwable tr) {
 //            LOG.warning(tr.toString());
 //        }
+    }
+
+    private String getPermissionValue(String permissionKey) {
+        if (mPermissionMap.containsKey(permissionKey)) {
+            return mPermissionMap.get(permissionKey);
+        }
+        return mExtraPermissionMap.get(permissionKey);
     }
 
     public List<String> getAllPermissionKey() {
@@ -181,6 +195,25 @@ public class PermissionCollector {
         callerSet.add(caller);
     }
 
+    public synchronized void addUriPermission(String permission, String caller) {
+        if (!mPermissionMap.containsKey(permission)) {
+            if (!mExtraPermissionMap.containsKey(permission)) {
+                mExtraPermissionMap.put(permission, translatePermission(permission));
+                LOG.info("addMethodPermission but permission not found in Manifest, permission: " + permission + ", caller: " + caller);
+            }
+        }
+        Set<String> callerSet = mUriPermissions.get(permission);
+        if (callerSet == null) {
+            callerSet = Collections.synchronizedSet(new HashSet<>());
+            mUriPermissions.put(permission, callerSet);
+        }
+        callerSet.add(caller);
+    }
+
+    public synchronized void addUri(String caller) {
+        mUris.add(caller);
+    }
+
     private String translatePermission(String permission) {
         return "android.permission." + permission;
     }
@@ -191,6 +224,81 @@ public class PermissionCollector {
 
     public void dumpPermissionScanResult() {
         LOG.info("dumpPermissionScanResult start");
+        // DUMP mMethodPermissions
+        StringBuilder methodsContent = new StringBuilder();
+        for (Map.Entry entry : mMethodPermissions.entrySet()) {
+            String permission = (String) entry.getKey();
+            Set<String> callers = (Set<String>) entry.getValue();
+            if (methodsContent.length() > 0) {
+                methodsContent.append("\n\n");
+            }
+            methodsContent.append(getPermissionValue(permission));
+            for (String caller : callers) {
+                methodsContent.append("\n");
+                methodsContent.append("    ");
+                methodsContent.append(caller);
+            }
+        }
+        // DUMP mFieldPermissions
+        StringBuilder fieldsContent = new StringBuilder();
+        for (Map.Entry entry : mFieldPermissions.entrySet()) {
+            String permission = (String) entry.getKey();
+            Set<String> callers = (Set<String>) entry.getValue();
+            if (fieldsContent.length() > 0) {
+                fieldsContent.append("\n\n");
+            }
+            fieldsContent.append(getPermissionValue(permission));
+            for (String caller : callers) {
+                fieldsContent.append("\n");
+                fieldsContent.append("    ");
+                fieldsContent.append(caller);
+            }
+        }
+        // DUMP mClassPermissions
+        StringBuilder classesContent = new StringBuilder();
+        for (Map.Entry entry : mClassPermissions.entrySet()) {
+            String permission = (String) entry.getKey();
+            Set<String> callers = (Set<String>) entry.getValue();
+            if (classesContent.length() > 0) {
+                classesContent.append("\n\n");
+            }
+            classesContent.append(getPermissionValue(permission));
+            for (String caller : callers) {
+                classesContent.append("\n");
+                classesContent.append("    ");
+                classesContent.append(caller);
+            }
+        }
+        // DUMP mUris
+        StringBuilder urisContent = new StringBuilder();
+        for (String uri : mUris) {
+            if (urisContent.length() > 0) {
+                urisContent.append("\n");
+            }
+            urisContent.append(uri);
+        }
+        // DUMP mUriPermissions
+        StringBuilder uriPsContent = new StringBuilder();
+        for (Map.Entry entry : mUriPermissions.entrySet()) {
+            String permission = (String) entry.getKey();
+            Set<String> callers = (Set<String>) entry.getValue();
+            if (uriPsContent.length() > 0) {
+                uriPsContent.append("\n\n");
+            }
+            uriPsContent.append(getPermissionValue(permission));
+            for (String caller : callers) {
+                uriPsContent.append("\n");
+                uriPsContent.append("    ");
+                uriPsContent.append(caller);
+            }
+        }
+        // save to file
+        FileUtil.saveStringToFile(methodsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/MethodPermissions.txt"));
+        FileUtil.saveStringToFile(fieldsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/FieldPermissions.txt"));
+        FileUtil.saveStringToFile(classesContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/ClassePermissions.txt"));
+        FileUtil.saveStringToFile(urisContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/Uris.txt"));
+        FileUtil.saveStringToFile(uriPsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/UriPermissions.txt"));
+        LOG.info("dumpPermissionScanResult end");
     }
 
 }
