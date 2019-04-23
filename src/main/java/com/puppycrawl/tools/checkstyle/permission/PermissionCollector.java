@@ -25,6 +25,8 @@ public class PermissionCollector {
         return sInstance;
     }
 
+    private final Set<String> mClassesToDump = Collections.synchronizedSet(new HashSet<>());
+
     private final Map<String, String> mPermissionMap = new ConcurrentHashMap<>();
     private final Map<String, String> mExtraPermissionMap = new ConcurrentHashMap<>();
 //    private final Map<String, String> mPermissionGroupMap = new ConcurrentHashMap<>();
@@ -42,6 +44,8 @@ public class PermissionCollector {
     private final Set<String> mUris = Collections.synchronizedSet(new HashSet<>());
     private final Map<String, Set<String>> mUriPermissions = new ConcurrentHashMap<>();
 //    private final Map<String, Set<String>> mUriPermissionGroups = new ConcurrentHashMap<>();
+
+    private final Map<String, Set<String>> mClassDumps = new ConcurrentHashMap<>();
 
     public void init() {
         // init permission map
@@ -81,6 +85,23 @@ public class PermissionCollector {
 //        } catch (Throwable tr) {
 //            LOG.warning(tr.toString());
 //        }
+        mClassesToDump.add("android.provider.CalendarContract");
+        mClassesToDump.add("android.provider.ContactsContract");
+        mClassesToDump.add("android.provider.Contacts");
+        mClassesToDump.add("android.media.AudioRecorder");
+        mClassesToDump.add("android.media.MediaRecorder");
+        mClassesToDump.add("android.telephony.SmsManager");
+        mClassesToDump.add("android.telephony.gsm.SmsManager");
+        mClassesToDump.add("android.content.ClipboardManager");
+        mClassesToDump.add("android.content.ClipData");
+        mClassesToDump.add("android.content.ClipDescription");
+        mClassesToDump.add("android.os.BatteryManager");
+        mClassesToDump.add("android.net.TrafficStats");
+        mClassesToDump.add("android.hardware.fingerprint.FingerprintManager");
+        mClassesToDump.add("android.hardware.biometrics.BiometricPrompt");
+        mClassesToDump.add("android.media.FaceDetector");
+        mClassesToDump.add("android.speech.SpeechRecognizer");
+        mClassesToDump.add("android.provider.DocumentsProvider");
     }
 
     private String getPermissionValue(String permissionKey) {
@@ -102,6 +123,15 @@ public class PermissionCollector {
         rValue.addAll(mPermissionMap.values());
         rValue.addAll(mExtraPermissionMap.values());
         return rValue;
+    }
+
+    public synchronized String getRelevantClass(String caller) {
+        for (String classToDump : mClassesToDump) {
+            if (caller.split(" ")[1].startsWith(classToDump)) {
+                return classToDump;
+            }
+        }
+        return null;
     }
 
     public synchronized void addMethodPermission(String permission, String caller) {
@@ -210,6 +240,15 @@ public class PermissionCollector {
         callerSet.add(caller);
     }
 
+    public synchronized void addClassDump(String classDump, String caller) {
+        Set<String> callerSet = mClassDumps.get(classDump);
+        if (callerSet == null) {
+            callerSet = Collections.synchronizedSet(new HashSet<>());
+            mClassDumps.put(classDump, callerSet);
+        }
+        callerSet.add(caller);
+    }
+
     public synchronized void addUri(String caller) {
         mUris.add(caller);
     }
@@ -269,6 +308,21 @@ public class PermissionCollector {
                 classesContent.append(caller);
             }
         }
+        // DUMP mClassDumps
+        StringBuilder classDumpContent = new StringBuilder();
+        for (Map.Entry entry : mClassDumps.entrySet()) {
+            String classDump = (String) entry.getKey();
+            Set<String> callers = (Set<String>) entry.getValue();
+            if (classDumpContent.length() > 0) {
+                classDumpContent.append("\n\n");
+            }
+            classDumpContent.append(classDump);
+            for (String caller : callers) {
+                classDumpContent.append("\n");
+                classDumpContent.append("    ");
+                classDumpContent.append(caller);
+            }
+        }
         // DUMP mUris
         StringBuilder urisContent = new StringBuilder();
         for (String uri : mUris) {
@@ -298,6 +352,7 @@ public class PermissionCollector {
         FileUtil.saveStringToFile(classesContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/ClassePermissions.txt"));
         FileUtil.saveStringToFile(urisContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/Uris.txt"));
         FileUtil.saveStringToFile(uriPsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/UriPermissions.txt"));
+        FileUtil.saveStringToFile(classDumpContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/ClassDump.txt"));
         LOG.info("dumpPermissionScanResult end");
     }
 
