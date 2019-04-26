@@ -347,12 +347,12 @@ public class PermissionCollector {
             }
         }
         // save to file
-        FileUtil.saveStringToFile(methodsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/MethodPermissions.txt"));
-        FileUtil.saveStringToFile(fieldsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/FieldPermissions.txt"));
-        FileUtil.saveStringToFile(classesContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/ClassePermissions.txt"));
-        FileUtil.saveStringToFile(urisContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/Uris.txt"));
-        FileUtil.saveStringToFile(uriPsContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/UriPermissions.txt"));
-        FileUtil.saveStringToFile(classDumpContent.toString(), new File("/Users/fengdi/Downloads/Permissions/Output/ClassDump.txt"));
+        FileUtil.saveStringToFile(methodsContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/MethodPermissions.txt"));
+        FileUtil.saveStringToFile(fieldsContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/FieldPermissions.txt"));
+        FileUtil.saveStringToFile(classesContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/ClassePermissions.txt"));
+        FileUtil.saveStringToFile(urisContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/Uris.txt"));
+        FileUtil.saveStringToFile(uriPsContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/UriPermissions.txt"));
+        FileUtil.saveStringToFile(classDumpContent.toString(), new File("/Users/fengdi/Desktop/Permissions/Output/ClassDump.txt"));
         LOG.info("dumpPermissionScanResult end");
     }
 

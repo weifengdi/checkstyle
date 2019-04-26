@@ -372,10 +372,12 @@ public final class Main {
 
             // 初始化权限检查相关环境变量
             PermissionCollector.getInstance().init();
+            ManifestHelper.getInstance().init();
             // run RootModule
             errorCounter = rootModule.process(filesToProcess);
             // 输出权限检查相关扫描结果
             PermissionCollector.getInstance().dumpPermissionScanResult();
+            ManifestHelper.getInstance().dumpManifestScanResult();
         }
         finally {
             rootModule.destroy();
