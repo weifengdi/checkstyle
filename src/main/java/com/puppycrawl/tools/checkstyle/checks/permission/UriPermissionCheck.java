@@ -49,7 +49,14 @@ public class UriPermissionCheck extends AbstractCheck {
         DetailAST typeAST = variableAST.findFirstToken(TokenTypes.TYPE);
         FullIdent fullIdent = FullIdent.createFullIdent(typeAST.getFirstChild());
         String fieldType = fullIdent.getText();
-        if (!(fieldName.equals("AUTHORITY") && fieldType.equals("java.lang.String"))) {
+        String assignInfo = getAssignInfo(variableAST);
+        if (assignInfo != null) {
+            assignInfo = assignInfo.replace("\"", "");
+        }
+        if (!(fieldType.endsWith("String"))) {
+            return;
+        }
+        if (!(assignInfo != null && assignInfo.startsWith("content://"))) {
             return;
         }
         String desc = getDesc(variableAST);
@@ -105,6 +112,21 @@ public class UriPermissionCheck extends AbstractCheck {
         CommentUtil.getPotentialPermissions(commentLine, permissionsSet, "android.Manifest.permission#", null);
         CommentUtil.getPotentialPermissions(commentLine, permissionsSet, "android.permission.", null);
         CommentUtil.getPotentialPermissions(commentLine, permissionsSet, " ", " permission");
+    }
+
+    private String getAssignInfo(DetailAST fieldAST) {
+        String assignInfo = null;
+        try {
+            DetailAST assignAST = fieldAST.findFirstToken(TokenTypes.ASSIGN);
+            if (assignAST != null) {
+                DetailAST exprAST = assignAST.findFirstToken(TokenTypes.EXPR);
+                DetailAST valueAST = exprAST.getFirstChild();
+                assignInfo = valueAST.getText();
+            }
+        } catch (Throwable tr) {
+
+        }
+        return assignInfo;
     }
 
     private String getDesc(DetailAST fieldAST) {
